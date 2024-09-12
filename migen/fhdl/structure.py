@@ -29,12 +29,16 @@ class _Value(DUID):
     def __bool__(self):
         # Special case: Constants and Signals are part of a set or used as
         # dictionary keys, and Python needs to check for equality.
+        # The part for the Slice has been added to do the same for Slices of
+        # Signals, Constants, and Slices.
         if isinstance(self, _Operator) and self.op == "==":
             a, b = self.operands
             if isinstance(a, Constant) and isinstance(b, Constant):
                 return a.value == b.value
             if isinstance(a, Signal) and isinstance(b, Signal):
                 return a is b
+            if isinstance(a, _Slice) and isinstance(b, _Slice):
+                return (a.value == b.value).__bool__ and (a.start == b.start) and (a.stop == b.stop)
             if (isinstance(a, Constant) and isinstance(b, Signal)
                     or isinstance(a, Signal) and isinstance(b, Constant)):
                 return False
