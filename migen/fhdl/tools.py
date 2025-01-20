@@ -226,14 +226,21 @@ class _BasicLowerer(_Lowerer):
 
 class _ComplexSliceLowerer(_Lowerer):
     def visit_Slice(self, node):
-        if not isinstance(node.value, Signal):
-            slice_proxy = Signal(value_bits_sign(node.value))
+        length = len(node)
+        start = 0
+        while isinstance(node, _Slice):
+            start += node.start
+            node = node.value
+        if isinstance(node, Signal):
+            node = _Slice(node, start, start + length)
+        else:
+            slice_proxy = Signal(value_bits_sign(node))
             if self.target_context:
-                a = _Assign(node.value, slice_proxy)
+                a = _Assign(node, slice_proxy)
             else:
-                a = _Assign(slice_proxy, node.value)
+                a = _Assign(slice_proxy, node)
             self.comb.append(self.visit_Assign(a))
-            node = _Slice(slice_proxy, node.start, node.stop)
+            node = _Slice(slice_proxy, start, start + length)
         return NodeTransformer.visit_Slice(self, node)
 
 class _ComplexPartLowerer(_Lowerer):
